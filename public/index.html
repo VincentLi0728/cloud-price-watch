@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Price Watch</title>
+    <meta
+      name="description"
+      content="Compare normalized cloud pricing across AWS, Azure, GCP, and Alibaba Cloud."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Cloud Price Watch</p>
+          <h1>把云厂商价格，变成可直接决策的月度账单。</h1>
+          <p class="lede">
+            用统一规格比较 AWS、Azure、GCP 和阿里云，不再在 SKU 和价目表里来回切换。
+          </p>
+          <div class="hero-stats" id="hero-stats"></div>
+        </div>
+        <div class="hero-panel">
+          <p class="panel-kicker">部署模式</p>
+          <h2>Azure VM 上线友好</h2>
+          <ul class="hero-list">
+            <li>零第三方运行时依赖</li>
+            <li>Node + Nginx + systemd</li>
+            <li>手机和 PC 端自适应</li>
+          </ul>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section class="control-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Scenario</p>
+            <h2>输入你的工作负载</h2>
+          </div>
+          <form id="compare-form" class="compare-form">
+            <label>
+              <span>Workload</span>
+              <select name="workload" id="workload"></select>
+            </label>
+            <label>
+              <span>Region</span>
+              <select name="region" id="region"></select>
+            </label>
+            <label>
+              <span>Billing</span>
+              <select name="billingModel" id="billingModel"></select>
+            </label>
+
+            <div class="field-grid">
+              <label data-workload-field="general-compute managed-postgres gpu-inference">
+                <span>vCPU</span>
+                <input type="number" min="1" name="vcpu" value="2" />
+              </label>
+              <label data-workload-field="general-compute managed-postgres gpu-inference">
+                <span>Memory (GB)</span>
+                <input type="number" min="1" name="memoryGb" value="8" />
+              </label>
+              <label data-workload-field="general-compute managed-postgres object-storage">
+                <span>Storage (GB)</span>
+                <input type="number" min="1" name="storageGb" value="100" />
+              </label>
+              <label data-workload-field="object-storage">
+                <span>Requests (10k)</span>
+                <input type="number" min="0" name="requestCount10k" value="50" />
+              </label>
+              <label data-workload-field="object-storage">
+                <span>Egress (GB)</span>
+                <input type="number" min="0" name="transferGb" value="200" />
+              </label>
+              <label data-workload-field="gpu-inference">
+                <span>GPU Count</span>
+                <input type="number" min="1" name="gpuCount" value="1" />
+              </label>
+            </div>
+
+            <button type="submit">Compare Pricing</button>
+          </form>
+        </section>
+
+        <section class="results-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Ranking</p>
+            <h2>结果一览</h2>
+          </div>
+          <div id="results" class="results"></div>
+        </section>
+
+        <section class="assumptions-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Assumptions</p>
+            <h2>计费假设</h2>
+          </div>
+          <ul id="assumptions" class="assumption-list"></ul>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/app.js"></script>
+  </body>
+  </html>

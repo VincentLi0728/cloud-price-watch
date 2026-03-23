@@ -1,0 +1,89 @@
+# Cloud Price Watch
+
+Cloud Price Watch is a lightweight pricing comparison web app for AWS, Azure, GCP, and Alibaba Cloud. It ships as a zero-dependency Node service with a responsive frontend, a normalized pricing catalog, and Azure VM deployment scripts.
+
+## What is included
+
+- A single Node HTTP server that serves the frontend and JSON APIs.
+- A normalized offer catalog for general compute, managed PostgreSQL, object storage, and GPU inference.
+- A responsive UI for mobile and desktop visitors.
+- Azure VM deployment assets for Nginx reverse proxy and systemd service management.
+
+## Local run
+
+1. Install Node.js 20 or later.
+2. Copy `.env.example` to `.env` and adjust values if needed.
+3. Run `node server.js`.
+4. Visit `http://127.0.0.1:3000`.
+
+## API endpoints
+
+- `GET /api/health`
+- `GET /api/metadata`
+- `POST /api/compare`
+
+Example request for `POST /api/compare`:
+
+```json
+{
+  "workload": "general-compute",
+  "region": "eastus",
+  "billingModel": "payg",
+  "requirements": {
+    "vcpu": 2,
+    "memoryGb": 8,
+    "storageGb": 100
+  }
+}
+```
+
+## Azure VM deployment
+
+### 1. Prepare the VM
+
+- Create an Ubuntu 22.04 Azure VM.
+- Open inbound ports `22`, `80`, and `443`.
+- SSH into the VM and upload this repository.
+
+Run:
+
+```bash
+chmod +x scripts/setup-azure-vm.sh
+./scripts/setup-azure-vm.sh
+```
+
+### 2. Configure environment variables
+
+Create `/opt/cloud-price-watch/shared/.env` on the VM:
+
+```bash
+PORT=3000
+HOST=127.0.0.1
+APP_NAME=Cloud Price Watch
+APP_BASE_URL=https://your-domain.example.com
+DEFAULT_CURRENCY=USD
+```
+
+### 3. Deploy updates
+
+From your local machine:
+
+```bash
+chmod +x scripts/deploy-azure-vm.sh
+./scripts/deploy-azure-vm.sh azureuser@your-vm-ip
+```
+
+### 4. Enable HTTPS
+
+After DNS points to the VM, install Certbot and issue a certificate:
+
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.example.com
+```
+
+## Suggested next steps
+
+- Replace the seed catalog with scheduled vendor-specific refresh jobs.
+- Add a persistent database for price history and alerting.
+- Add authentication if you want private team workspaces or saved comparison presets.

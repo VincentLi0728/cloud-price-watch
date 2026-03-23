@@ -1,0 +1,16 @@
+[Unit]
+Description=Cloud Price Watch
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/cloud-price-watch/current
+EnvironmentFile=/opt/cloud-price-watch/shared/.env
+ExecStart=/usr/bin/node /opt/cloud-price-watch/current/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

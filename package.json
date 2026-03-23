@@ -1,0 +1,14 @@
+{
+  "name": "cloud-price-watch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-dependency cloud pricing comparison app deployable on an Azure VM.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check src/pricing-service.js && node --check public/app.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
