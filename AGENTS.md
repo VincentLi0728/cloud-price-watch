@@ -17,6 +17,9 @@
 - When working on the cloud pricing project, use this repository as the default workspace.
 - Keep the website as the primary delivery target unless the user explicitly shifts priority to the app.
 - Prefer changes that keep deployment simple for an Azure VM.
+- Default deployment workflow: push to GitHub, SSH to the Azure VM, run `git pull`, restart `cloud-price-watch`, and verify health checks.
+- Default VM runtime user: `azureuser` so manual SSH maintenance and `git pull` remain simple during the website MVP phase.
+- Future option: the VM can be migrated later to a dedicated service account such as `www-data` if deployment becomes more automated or security boundaries need to tighten.
 
 ## How To Evolve This File
 

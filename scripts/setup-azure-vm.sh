@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_ROOT="/opt/cloud-price-watch"
-APP_USER="www-data"
+APP_USER="azureuser"
 
 sudo apt-get update
 sudo apt-get install -y curl nginx ufw git
@@ -30,4 +30,4 @@ sudo ufw allow "Nginx Full"
 sudo ufw --force enable
 
 echo "Azure VM base setup complete."
-echo "Next: copy the project to ${APP_ROOT}/current and create ${APP_ROOT}/shared/.env"
+echo "Next: clone or pull the project into ${APP_ROOT}/current and create ${APP_ROOT}/shared/.env"

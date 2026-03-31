@@ -19,7 +19,7 @@ rsync -av --delete \
   ./ "${TARGET}:${APP_ROOT}"
 
 ssh "${TARGET}" "
-  sudo chown -R www-data:www-data ${APP_ROOT} &&
+  sudo chown -R azureuser:azureuser ${APP_ROOT} &&
   sudo systemctl restart cloud-price-watch &&
   sleep 2 &&
   curl -fsS --max-time 10 ${REMOTE_HEALTH_URL} &&

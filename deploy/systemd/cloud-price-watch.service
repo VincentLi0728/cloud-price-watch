@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=azureuser
+Group=azureuser
 WorkingDirectory=/opt/cloud-price-watch/current
 EnvironmentFile=/opt/cloud-price-watch/shared/.env
 ExecStart=/usr/bin/node /opt/cloud-price-watch/current/server.js

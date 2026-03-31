@@ -59,12 +59,14 @@ Create `/opt/cloud-price-watch/shared/.env` on the VM:
 ```bash
 PORT=3000
 HOST=127.0.0.1
-APP_NAME=Cloud Price Watch
+APP_NAME="Cloud Price Watch"
 APP_BASE_URL=https://your-domain.example.com
 DEFAULT_CURRENCY=USD
 ```
 
 ### 3. Deploy updates
+
+Default workflow for this project: push to GitHub, SSH to the VM, run `git pull origin main`, restart `cloud-price-watch`, and verify `http://127.0.0.1:3000/api/health` plus the public site.
 
 From Linux or macOS:
 

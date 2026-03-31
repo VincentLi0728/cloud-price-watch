@@ -39,7 +39,7 @@ $remoteCommand = @"
 set -euo pipefail
 sudo mkdir -p '${AppRoot}'
 sudo tar -xzf '${remoteArchivePath}' -C '${AppRoot}'
-sudo chown -R www-data:www-data '${AppRoot}'
+sudo chown -R azureuser:azureuser '${AppRoot}'
 sudo systemctl restart cloud-price-watch
 sleep 2
 curl -fsS --max-time 10 '${RemoteHealthUrl}'
