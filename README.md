@@ -66,11 +66,29 @@ DEFAULT_CURRENCY=USD
 
 ### 3. Deploy updates
 
-From your local machine:
+From Linux or macOS:
 
 ```bash
 chmod +x scripts/deploy-azure-vm.sh
 ./scripts/deploy-azure-vm.sh azureuser@your-vm-ip
+```
+
+Optional: if the site is already behind a domain or HTTPS, override the public verification URL:
+
+```bash
+PUBLIC_HEALTH_URL=https://your-domain.example.com/api/health ./scripts/deploy-azure-vm.sh azureuser@your-vm-ip
+```
+
+From Windows PowerShell:
+
+```powershell
+.\scripts\deploy-azure-vm.ps1 -Target azureuser@your-vm-ip
+```
+
+Optional:
+
+```powershell
+.\scripts\deploy-azure-vm.ps1 -Target azureuser@your-vm-ip -PublicHealthUrl https://your-domain.example.com/api/health
 ```
 
 ### 4. Enable HTTPS

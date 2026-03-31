@@ -5,7 +5,11 @@ const heroStats = document.querySelector("#hero-stats");
 const workloadSelect = document.querySelector("#workload");
 const regionSelect = document.querySelector("#region");
 const billingSelect = document.querySelector("#billingModel");
+const workloadHint = document.querySelector("#workload-hint");
+const resultSummaryRoot = document.querySelector("#result-summary");
 const fieldGroups = [...document.querySelectorAll("[data-workload-field]")];
+
+let metadataCache = null;
 
 function money(value) {
   return new Intl.NumberFormat("en-US", {
@@ -22,22 +26,55 @@ function createOption(select, item) {
   select.append(option);
 }
 
+function setStatus(message, tone = "neutral") {
+  resultsRoot.innerHTML = `<div class="empty-state ${tone}">${message}</div>`;
+}
+
 function syncVisibleFields(workload) {
   for (const field of fieldGroups) {
     const visibleWorkloads = field.dataset.workloadField.split(" ");
     field.hidden = !visibleWorkloads.includes(workload);
   }
+
+  const currentWorkload = metadataCache?.workloads.find((item) => item.id === workload);
+  workloadHint.textContent = currentWorkload?.description || "";
+}
+
+function renderSummary(data) {
+  if (!data.results.length) {
+    resultSummaryRoot.innerHTML = "";
+    resultSummaryRoot.hidden = true;
+    return;
+  }
+
+  const [best, runnerUp] = data.results;
+  const savings = runnerUp ? Math.max(runnerUp.estimatedMonthly - best.estimatedMonthly, 0) : 0;
+  const savingsCopy = runnerUp
+    ? `Compared with ${runnerUp.vendor}, this recommendation saves about ${money(savings)} per month.`
+    : "Only one offer matches the current workload requirements.";
+
+  resultSummaryRoot.hidden = false;
+  resultSummaryRoot.innerHTML = `
+    <div class="summary-card">
+      <p class="summary-kicker">Best current match</p>
+      <div class="summary-grid">
+        <div>
+          <h3>${best.vendor}</h3>
+          <p class="summary-copy">${best.sku} in ${best.regionLabel}</p>
+        </div>
+        <div class="summary-metric">${money(best.estimatedMonthly)}/mo</div>
+      </div>
+      <p class="summary-copy">${savingsCopy}</p>
+    </div>
+  `;
 }
 
 function renderResults(data) {
   resultsRoot.innerHTML = "";
+  renderSummary(data);
 
   if (!data.results.length) {
-    resultsRoot.innerHTML = `
-      <div class="empty-state">
-        当前筛选条件下没有找到匹配报价。可以放宽区域、购买方式或规格要求再试一次。
-      </div>
-    `;
+    setStatus("No matching offers were found for this filter set. Try relaxing the region, billing model, or resource requirements.", "neutral");
     return;
   }
 
@@ -70,59 +107,146 @@ function renderAssumptions(assumptions) {
   assumptionsRoot.innerHTML = assumptions.map((item) => `<li>${item}</li>`).join("");
 }
 
-async function loadMetadata() {
-  const response = await fetch("/api/metadata");
-  const metadata = await response.json();
-
-  metadata.workloads.forEach((item) => createOption(workloadSelect, item));
-  metadata.regions.forEach((item) => createOption(regionSelect, item));
-  metadata.billingModels.forEach((item) => createOption(billingSelect, item));
-
-  heroStats.innerHTML = `
-    <span class="stat-chip">${metadata.vendorCount} vendors</span>
-    <span class="stat-chip">${metadata.offerCount} normalized offers</span>
-    <span class="stat-chip">${metadata.regions.length} regions</span>
-    <span class="stat-chip">Responsive mobile + desktop UI</span>
-  `;
-
-  workloadSelect.value = "general-compute";
-  regionSelect.value = "eastus";
-  billingSelect.value = "payg";
-  syncVisibleFields(workloadSelect.value);
+function getNumericField(formData, key) {
+  return Number(formData.get(key)) || 0;
 }
 
 function getRequirements(formData) {
   return {
-    vcpu: Number(formData.get("vcpu")) || 0,
-    memoryGb: Number(formData.get("memoryGb")) || 0,
-    storageGb: Number(formData.get("storageGb")) || 0,
-    requestCount10k: Number(formData.get("requestCount10k")) || 0,
-    transferGb: Number(formData.get("transferGb")) || 0,
-    gpuCount: Number(formData.get("gpuCount")) || 0
+    vcpu: getNumericField(formData, "vcpu"),
+    memoryGb: getNumericField(formData, "memoryGb"),
+    storageGb: getNumericField(formData, "storageGb"),
+    requestCount10k: getNumericField(formData, "requestCount10k"),
+    transferGb: getNumericField(formData, "transferGb"),
+    gpuCount: getNumericField(formData, "gpuCount")
   };
 }
 
-async function compare() {
+function buildPayload() {
   const formData = new FormData(form);
-  const payload = {
+  return {
     workload: formData.get("workload"),
     region: formData.get("region"),
     billingModel: formData.get("billingModel"),
     requirements: getRequirements(formData)
   };
+}
 
-  resultsRoot.innerHTML = `<div class="empty-state">正在计算最接近的报价组合...</div>`;
+function syncUrl(payload, replace = false) {
+  const params = new URLSearchParams();
+  params.set("workload", payload.workload);
+  params.set("region", payload.region);
+  params.set("billingModel", payload.billingModel);
 
-  const response = await fetch("/api/compare", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
+  Object.entries(payload.requirements).forEach(([key, value]) => {
+    if (value > 0) {
+      params.set(key, String(value));
+    }
   });
-  const data = await response.json();
-  renderResults(data);
-  renderAssumptions(data.assumptions);
+
+  const nextUrl = `${window.location.pathname}?${params.toString()}`;
+  const state = { payload };
+
+  if (replace) {
+    window.history.replaceState(state, "", nextUrl);
+    return;
+  }
+
+  window.history.pushState(state, "", nextUrl);
+}
+
+function hydrateFormFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const knownWorkloads = new Set(metadataCache.workloads.map((item) => item.id));
+  const knownRegions = new Set(metadataCache.regions.map((item) => item.id));
+  const knownBillingModels = new Set(metadataCache.billingModels.map((item) => item.id));
+
+  const workload = params.get("workload");
+  const region = params.get("region");
+  const billingModel = params.get("billingModel");
+
+  workloadSelect.value = knownWorkloads.has(workload) ? workload : "general-compute";
+  regionSelect.value = knownRegions.has(region) ? region : "eastus";
+  billingSelect.value = knownBillingModels.has(billingModel) ? billingModel : "payg";
+
+  const numberFields = [
+    ["vcpu", "2"],
+    ["memoryGb", "8"],
+    ["storageGb", "100"],
+    ["requestCount10k", "50"],
+    ["transferGb", "200"],
+    ["gpuCount", "1"]
+  ];
+
+  numberFields.forEach(([key, fallback]) => {
+    const field = form.elements.namedItem(key);
+
+    if (!(field instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const value = params.get(key);
+    field.value = value && !Number.isNaN(Number(value)) ? value : fallback;
+  });
+
+  syncVisibleFields(workloadSelect.value);
+}
+
+async function loadMetadata() {
+  const response = await fetch("/api/metadata");
+
+  if (!response.ok) {
+    throw new Error(`Metadata request failed with status ${response.status}`);
+  }
+
+  metadataCache = await response.json();
+
+  metadataCache.workloads.forEach((item) => createOption(workloadSelect, item));
+  metadataCache.regions.forEach((item) => createOption(regionSelect, item));
+  metadataCache.billingModels.forEach((item) => createOption(billingSelect, item));
+
+  heroStats.innerHTML = `
+    <span class="stat-chip">${metadataCache.vendorCount} vendors</span>
+    <span class="stat-chip">${metadataCache.offerCount} normalized offers</span>
+    <span class="stat-chip">${metadataCache.regions.length} regions</span>
+    <span class="stat-chip">Shareable comparison URLs</span>
+  `;
+
+  hydrateFormFromUrl();
+}
+
+async function compare({ replaceHistory = false } = {}) {
+  const payload = buildPayload();
+  syncUrl(payload, replaceHistory);
+  resultSummaryRoot.hidden = true;
+  setStatus("Calculating the closest pricing matches for this workload...", "neutral");
+
+  try {
+    const response = await fetch("/api/compare", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Compare request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    renderResults(data);
+    renderAssumptions(data.assumptions);
+  } catch (error) {
+    resultSummaryRoot.hidden = true;
+    assumptionsRoot.innerHTML = "";
+    setStatus(
+      error instanceof Error
+        ? `Pricing comparison failed: ${error.message}`
+        : "Pricing comparison failed for an unknown reason.",
+      "error"
+    );
+  }
 }
 
 workloadSelect.addEventListener("change", (event) => {
@@ -134,5 +258,19 @@ form.addEventListener("submit", async (event) => {
   await compare();
 });
 
-await loadMetadata();
-await compare();
+window.addEventListener("popstate", async () => {
+  hydrateFormFromUrl();
+  await compare({ replaceHistory: true });
+});
+
+try {
+  await loadMetadata();
+  await compare({ replaceHistory: true });
+} catch (error) {
+  setStatus(
+    error instanceof Error
+      ? `Unable to load application metadata: ${error.message}`
+      : "Unable to load application metadata.",
+    "error"
+  );
+}

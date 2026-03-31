@@ -6,7 +6,7 @@
     <title>Cloud Price Watch</title>
     <meta
       name="description"
-      content="Compare normalized cloud pricing across AWS, Azure, GCP, and Alibaba Cloud."
+      content="对比 AWS、Azure、GCP 和阿里云的标准化云资源价格。"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -15,19 +15,19 @@
       <header class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Cloud Price Watch</p>
-          <h1>把云厂商价格，变成可直接决策的月度账单。</h1>
+          <h1>把云厂商报价，整理成能直接决策的月度账单。</h1>
           <p class="lede">
-            用统一规格比较 AWS、Azure、GCP 和阿里云，不再在 SKU 和价目表里来回切换。
+            用统一规格比较 AWS、Azure、GCP 和阿里云，不再在 SKU、区域和计费页之间来回切换。
           </p>
           <div class="hero-stats" id="hero-stats"></div>
         </div>
         <div class="hero-panel">
-          <p class="panel-kicker">部署模式</p>
-          <h2>Azure VM 上线友好</h2>
+          <p class="panel-kicker">Deployment</p>
+          <h2>为 Azure VM 简化上线流程</h2>
           <ul class="hero-list">
             <li>零第三方运行时依赖</li>
             <li>Node + Nginx + systemd</li>
-            <li>手机和 PC 端自适应</li>
+            <li>可分享的查询链接，方便团队同步</li>
           </ul>
         </div>
       </header>
@@ -42,6 +42,7 @@
             <label>
               <span>Workload</span>
               <select name="workload" id="workload"></select>
+              <small id="workload-hint" class="help-text"></small>
             </label>
             <label>
               <span>Region</span>
@@ -88,7 +89,8 @@
             <p class="eyebrow">Ranking</p>
             <h2>结果一览</h2>
           </div>
-          <div id="results" class="results"></div>
+          <div id="result-summary" class="result-summary" hidden></div>
+          <div id="results" class="results" aria-live="polite"></div>
         </section>
 
         <section class="assumptions-panel">
@@ -102,4 +104,4 @@
     </div>
     <script type="module" src="/app.js"></script>
   </body>
-  </html>
+</html>
