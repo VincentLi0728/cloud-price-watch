@@ -27,7 +27,7 @@ function readGeneratedCatalog() {
 }
 
 function toCoverageKey(item) {
-  return [item.vendor, item.market, item.workload].join("::");
+  return [item.vendor, item.market, item.workload, item.billingModel || "*"].join("::");
 }
 
 function mergeOffers() {

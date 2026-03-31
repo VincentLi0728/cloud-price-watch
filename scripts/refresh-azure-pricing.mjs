@@ -242,10 +242,13 @@ async function main() {
     const result = await refreshTarget(target);
     offers.push(...result.offers);
     generatedAtValues.push(result.generatedAt);
-    coverage.push({
-      vendor: target.vendor,
-      market: target.market,
-      workload: target.workload
+    result.offers.forEach((offer) => {
+      coverage.push({
+        vendor: offer.vendor,
+        market: offer.market,
+        workload: offer.workload,
+        billingModel: offer.billingModel
+      });
     });
   }
 
