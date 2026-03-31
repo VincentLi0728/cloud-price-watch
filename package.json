@@ -6,7 +6,8 @@
   "description": "Zero-dependency cloud pricing comparison app deployable on an Azure VM.",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check src/pricing-service.js && node --check public/app.js"
+    "check": "node --check server.js && node --check src/pricing-service.js && node --check public/app.js && node --check scripts/refresh-azure-pricing.mjs && node --check src/data/offer-registry.js",
+    "refresh:azure": "node scripts/refresh-azure-pricing.mjs"
   },
   "engines": {
     "node": ">=20.0.0"

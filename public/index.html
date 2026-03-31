@@ -6,7 +6,7 @@
     <title>Cloud Price Watch</title>
     <meta
       name="description"
-      content="对比 AWS、Azure、GCP 和阿里云的标准化云资源价格。"
+      content="对比全球市场与中国区市场下 AWS、Azure、GCP 和阿里云的标准化云资源价格。"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -15,19 +15,19 @@
       <header class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Cloud Price Watch</p>
-          <h1>把云厂商报价，整理成能直接决策的月度账单。</h1>
+          <h1>把多云报价整理成按市场可决策的月度账单。</h1>
           <p class="lede">
-            用统一规格比较 AWS、Azure、GCP 和阿里云，不再在 SKU、区域和计费页之间来回切换。
+            先选市场，再按统一规格比较 AWS、Azure、GCP 和阿里云；全球区与中国区分开建模，避免把不同运营方和币种混成一张表。
           </p>
           <div class="hero-stats" id="hero-stats"></div>
         </div>
         <div class="hero-panel">
-          <p class="panel-kicker">Deployment</p>
-          <h2>为 Azure VM 简化上线流程</h2>
+          <p class="panel-kicker">Markets</p>
+          <h2>支持 Global 与中国区运营方市场</h2>
           <ul class="hero-list">
-            <li>零第三方运行时依赖</li>
-            <li>Node + Nginx + systemd</li>
-            <li>可分享的查询链接，方便团队同步</li>
+            <li>中国区与全球区价格分开展示</li>
+            <li>展示运营方、数据来源和刷新时间</li>
+            <li>为 Azure 21Vianet 与 AWS 中国区预留统一模型</li>
           </ul>
         </div>
       </header>
@@ -40,16 +40,21 @@
           </div>
           <form id="compare-form" class="compare-form">
             <label>
-              <span>Workload</span>
+              <span>工作负载 Workload</span>
               <select name="workload" id="workload"></select>
               <small id="workload-hint" class="help-text"></small>
             </label>
             <label>
-              <span>Region</span>
+              <span>市场 Market</span>
+              <select name="market" id="market"></select>
+              <small id="market-hint" class="help-text"></small>
+            </label>
+            <label>
+              <span>区域 Region</span>
               <select name="region" id="region"></select>
             </label>
             <label>
-              <span>Billing</span>
+              <span>计费方式 Billing</span>
               <select name="billingModel" id="billingModel"></select>
             </label>
 
@@ -59,28 +64,28 @@
                 <input type="number" min="1" name="vcpu" value="2" />
               </label>
               <label data-workload-field="general-compute managed-postgres gpu-inference">
-                <span>Memory (GB)</span>
+                <span>内存 Memory (GB)</span>
                 <input type="number" min="1" name="memoryGb" value="8" />
               </label>
               <label data-workload-field="general-compute managed-postgres object-storage">
-                <span>Storage (GB)</span>
+                <span>存储 Storage (GB)</span>
                 <input type="number" min="1" name="storageGb" value="100" />
               </label>
               <label data-workload-field="object-storage">
-                <span>Requests (10k)</span>
+                <span>请求量 Requests (10k)</span>
                 <input type="number" min="0" name="requestCount10k" value="50" />
               </label>
               <label data-workload-field="object-storage">
-                <span>Egress (GB)</span>
+                <span>公网流出 Egress (GB)</span>
                 <input type="number" min="0" name="transferGb" value="200" />
               </label>
               <label data-workload-field="gpu-inference">
-                <span>GPU Count</span>
+                <span>GPU 数量 GPU Count</span>
                 <input type="number" min="1" name="gpuCount" value="1" />
               </label>
             </div>
 
-            <button type="submit">Compare Pricing</button>
+            <button type="submit">开始比较 Compare</button>
           </form>
         </section>
 

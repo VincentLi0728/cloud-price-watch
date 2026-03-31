@@ -190,6 +190,13 @@ button:hover {
   gap: 14px;
 }
 
+.result-meta {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .result-summary {
   margin-bottom: 14px;
 }

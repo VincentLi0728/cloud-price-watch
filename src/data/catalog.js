@@ -1,38 +1,67 @@
 export const workloadDefinitions = [
   {
     id: "general-compute",
-    label: "General Compute",
-    description: "Linux virtual machines for web apps, APIs, and background workers."
+    label: "通用计算 General Compute",
+    description: "适合 Web 应用、API 和后台任务的 Linux 虚拟机。"
   },
   {
     id: "managed-postgres",
-    label: "Managed PostgreSQL",
-    description: "Managed relational databases sized by vCPU, memory, and storage."
+    label: "托管 PostgreSQL Managed PostgreSQL",
+    description: "按 vCPU、内存和存储规格进行比较的托管数据库。"
   },
   {
     id: "object-storage",
-    label: "Object Storage",
-    description: "Public cloud object storage with request and egress charges."
+    label: "对象存储 Object Storage",
+    description: "包含请求费用和公网流出的对象存储服务。"
   },
   {
     id: "gpu-inference",
-    label: "GPU Inference",
-    description: "Inference-focused GPU instances for AI APIs and batch jobs."
+    label: "GPU 推理 GPU Inference",
+    description: "面向 AI API 与批处理任务的推理型 GPU 实例。"
+  }
+];
+
+export const marketDefinitions = [
+  {
+    id: "global",
+    label: "全球 Global",
+    description: "由全球公有云市场提供的标准区域与报价。"
+  },
+  {
+    id: "china",
+    label: "中国 Mainland China",
+    description: "由本地运营方提供的中国区市场，例如 21Vianet、Sinnet、NWCD。"
   }
 ];
 
 export const regionDefinitions = [
-  { id: "eastus", label: "East US" },
-  { id: "westeurope", label: "West Europe" },
-  { id: "southeastasia", label: "Southeast Asia" }
+  { id: "eastus", label: "美国东部 East US", markets: ["global"] },
+  { id: "westeurope", label: "西欧 West Europe", markets: ["global"] },
+  { id: "southeastasia", label: "东南亚 Southeast Asia", markets: ["global"] },
+  { id: "china-east", label: "中国东部 China East", markets: ["china"] },
+  { id: "china-north", label: "中国北部 China North", markets: ["china"] }
 ];
 
 export const billingModels = [
-  { id: "payg", label: "Pay as you go" },
-  { id: "reserved", label: "1-year commit" }
+  { id: "payg", label: "按量计费 Pay as you go" },
+  { id: "reserved", label: "一年承诺 1-year commit" }
 ];
 
-export const offers = [
+const defaultOperatorByVendor = {
+  AWS: "Amazon Web Services",
+  Azure: "Microsoft",
+  GCP: "Google Cloud",
+  "Alibaba Cloud": "Alibaba Cloud"
+};
+
+const seedSource = {
+  source: "seed",
+  sourceLabel: "种子数据 Seed dataset",
+  sourceUrl: null,
+  lastUpdatedAt: null
+};
+
+const baseOffers = [
   {
     id: "aws-eastus-gc-2x8-payg",
     vendor: "AWS",
@@ -327,3 +356,14 @@ export const offers = [
     notes: ["Compute and GPU combined estimate"]
   }
 ];
+
+function annotateSeedOffer(offer) {
+  return {
+    market: "global",
+    operator: defaultOperatorByVendor[offer.vendor] || offer.vendor,
+    ...seedSource,
+    ...offer
+  };
+}
+
+export const seedOffers = baseOffers.map(annotateSeedOffer);

@@ -2,6 +2,8 @@
 
 Cloud Price Watch is a lightweight pricing comparison web app for AWS, Azure, GCP, and Alibaba Cloud. It ships as a zero-dependency Node service with a responsive frontend, a normalized pricing catalog, and Azure VM deployment scripts.
 
+The app now treats `Global` and `China` as separate cloud markets so that operator-specific pricing, currencies, and refresh timestamps can be surfaced instead of being mixed into one ranking.
+
 ## What is included
 
 - A single Node HTTP server that serves the frontend and JSON APIs.
@@ -27,6 +29,7 @@ Example request for `POST /api/compare`:
 ```json
 {
   "workload": "general-compute",
+  "market": "global",
   "region": "eastus",
   "billingModel": "payg",
   "requirements": {
@@ -36,6 +39,12 @@ Example request for `POST /api/compare`:
   }
 }
 ```
+
+Current live connector scope:
+
+- Azure Global retail pricing for `general-compute`
+- Azure China (21Vianet) retail pricing for `general-compute`
+- Other workloads and vendors continue to use the normalized seed dataset until their market adapters are added
 
 ## Azure VM deployment
 
