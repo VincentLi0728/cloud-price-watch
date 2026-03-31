@@ -168,25 +168,57 @@ function getNumericField(formData, key) {
   return Number(formData.get(key)) || 0;
 }
 
-function getRequirements(formData) {
-  return {
-    vcpu: getNumericField(formData, "vcpu"),
-    memoryGb: getNumericField(formData, "memoryGb"),
-    storageGb: getNumericField(formData, "storageGb"),
-    requestCount10k: getNumericField(formData, "requestCount10k"),
-    transferGb: getNumericField(formData, "transferGb"),
-    gpuCount: getNumericField(formData, "gpuCount")
+function getRequirements(formData, workload) {
+  const requirements = {
+    vcpu: 0,
+    memoryGb: 0,
+    storageGb: 0,
+    requestCount10k: 0,
+    transferGb: 0,
+    gpuCount: 0
   };
+
+  if (workload === "general-compute") {
+    requirements.vcpu = getNumericField(formData, "vcpu");
+    requirements.memoryGb = getNumericField(formData, "memoryGb");
+    requirements.storageGb = getNumericField(formData, "storageGb");
+    return requirements;
+  }
+
+  if (workload === "managed-postgres") {
+    requirements.vcpu = getNumericField(formData, "vcpu");
+    requirements.memoryGb = getNumericField(formData, "memoryGb");
+    requirements.storageGb = getNumericField(formData, "storageGb");
+    return requirements;
+  }
+
+  if (workload === "object-storage") {
+    requirements.storageGb = getNumericField(formData, "storageGb");
+    requirements.requestCount10k = getNumericField(formData, "requestCount10k");
+    requirements.transferGb = getNumericField(formData, "transferGb");
+    return requirements;
+  }
+
+  if (workload === "gpu-inference") {
+    requirements.vcpu = getNumericField(formData, "vcpu");
+    requirements.memoryGb = getNumericField(formData, "memoryGb");
+    requirements.gpuCount = getNumericField(formData, "gpuCount");
+    return requirements;
+  }
+
+  return requirements;
 }
 
 function buildPayload() {
   const formData = new FormData(form);
+  const workload = formData.get("workload");
+
   return {
-    workload: formData.get("workload"),
+    workload,
     market: formData.get("market"),
     region: formData.get("region"),
     billingModel: formData.get("billingModel"),
-    requirements: getRequirements(formData)
+    requirements: getRequirements(formData, workload)
   };
 }
 
