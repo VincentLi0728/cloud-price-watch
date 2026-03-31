@@ -102,6 +102,14 @@ sudo apt-get install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.example.com
 ```
 
+## Recovery
+
+If the public site becomes unavailable, follow:
+
+```text
+docs/recovery-runbook.md
+```
+
 ## Suggested next steps
 
 - Replace the seed catalog with scheduled vendor-specific refresh jobs.
