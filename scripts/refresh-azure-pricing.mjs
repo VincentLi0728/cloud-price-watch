@@ -23,6 +23,26 @@ const marketTargets = [
     sourceLabel: "Azure 全球零售价格 API"
   },
   {
+    id: "azure-global-postgres-d2dsv5-westeurope",
+    vendor: "Azure",
+    operator: "Microsoft",
+    market: "global",
+    workload: "managed-postgres",
+    region: "westeurope",
+    sourceRegion: "westeurope",
+    sku: "Flexible Server D2ds v5",
+    armSkuName: "Standard_D2ds_v5",
+    computeProductName: "Azure Database for PostgreSQL Flexible Server General Purpose - Ddsv5 Series Compute",
+    computeGenericArmSkuName: "AzureDB_PostgreSQL_Flexible_Server_General_Purpose_Ddsv5Series_Compute_vCore",
+    storageProductName: "Az DB for PostgreSQL Flexible Server Storage",
+    storageSkuName: "Storage",
+    vcpu: 2,
+    memoryGb: 8,
+    engine: "PostgreSQL",
+    serviceFamily: "database",
+    sourceLabel: "Azure 全球零售价格 API"
+  },
+  {
     id: "azure-china-b2ms-china-east",
     vendor: "Azure",
     operator: "21Vianet",
@@ -36,6 +56,26 @@ const marketTargets = [
     memoryGb: 8,
     serviceFamily: "vm",
     sourceLabel: "Azure 中国零售价格 API"
+  },
+  {
+    id: "azure-china-postgres-d2dsv5-china-east",
+    vendor: "Azure",
+    operator: "21Vianet",
+    market: "china",
+    workload: "managed-postgres",
+    region: "china-east",
+    sourceRegion: "chinaeast2",
+    sku: "Flexible Server D2ds v5",
+    armSkuName: "Standard_D2ds_v5",
+    computeProductName: "Azure Database for PostgreSQL Flexible Server General Purpose - Ddsv5 Series Compute",
+    computeGenericArmSkuName: "AzureDB_PostgreSQL_Flexible_Server_General_Purpose_Ddsv5Series_Compute_vCore",
+    storageProductName: "Az DB for PostgreSQL Flexible Server Storage",
+    storageSkuName: "Storage",
+    vcpu: 2,
+    memoryGb: 8,
+    engine: "PostgreSQL",
+    serviceFamily: "database",
+    sourceLabel: "Azure 中国零售价格 API"
   }
 ];
 
@@ -47,6 +87,10 @@ function normalizeHourlyPrice(value) {
   }
 
   return Math.round(number * 1000000) / 1000000;
+}
+
+function normalizeMonthlyPrice(value) {
+  return normalizeHourlyPrice(value);
 }
 
 async function fetchJson(url) {
@@ -156,6 +200,42 @@ function buildAzureOffer(target, row, billingModel, generatedAt, sourceUrl) {
   };
 }
 
+function buildAzurePostgresOffer({
+  target,
+  billingModel,
+  generatedAt,
+  sourceUrl,
+  currency,
+  hourlyPrice,
+  storagePricePerGbMonth,
+  notes
+}) {
+  return {
+    id: `${target.vendor.toLowerCase()}-${target.market}-${target.region}-postgres-${billingModel}`,
+    vendor: target.vendor,
+    operator: target.operator,
+    market: target.market,
+    serviceFamily: target.serviceFamily,
+    workload: target.workload,
+    region: target.region,
+    billingModel,
+    currency,
+    unit: "hour",
+    sku: target.sku,
+    vcpu: target.vcpu,
+    memoryGb: target.memoryGb,
+    storageGbIncluded: 0,
+    storagePricePerGbMonth,
+    engine: target.engine,
+    hourlyPrice,
+    source: "azure-live",
+    sourceLabel: target.sourceLabel,
+    sourceUrl,
+    lastUpdatedAt: generatedAt,
+    notes
+  };
+}
+
 function isOneYearTerm(row) {
   return row.reservationTerm === "1 Year" || row.term === "1 Year";
 }
@@ -186,6 +266,91 @@ async function fetchGlobalVmRows(target) {
       payg ? buildAzureOffer(target, payg, "payg", generatedAt, url) : null,
       committed ? buildAzureOffer(target, committed, "reserved", generatedAt, url) : null
     ].filter(Boolean)
+  };
+}
+
+function pickStorageRow(rows, target) {
+  return rows.find((row) => {
+    return (
+      row.productName === target.storageProductName &&
+      row.skuName === target.storageSkuName &&
+      row.type === "Consumption"
+    );
+  });
+}
+
+function annualReservationToHourly(totalPerVcoreYear, vcpu) {
+  return normalizeHourlyPrice((Number(totalPerVcoreYear) * vcpu) / (24 * 365));
+}
+
+async function fetchGlobalPostgresRows(target) {
+  const filters = [
+    "serviceName eq 'Azure Database for PostgreSQL'",
+    `armRegionName eq '${target.sourceRegion}'`
+  ];
+  const url = `https://prices.azure.com/api/retail/prices?$filter=${encodeURIComponent(filters.join(" and "))}`;
+  const data = await fetchJson(url);
+  const generatedAt = new Date().toISOString();
+  const rows = data.Items || [];
+  const computeRows = rows.filter((row) => row.productName === target.computeProductName);
+  const storageRow = pickStorageRow(rows, target);
+  const payg = computeRows.find((row) => row.armSkuName === target.armSkuName && row.type === "Consumption");
+  const reservation = computeRows.find((row) => {
+    return (
+      row.armSkuName === target.computeGenericArmSkuName &&
+      row.type === "Reservation" &&
+      row.reservationTerm === "1 Year"
+    );
+  });
+
+  if (!payg || !storageRow) {
+    return {
+      generatedAt,
+      sourceUrl: url,
+      offers: []
+    };
+  }
+
+  const offers = [
+    buildAzurePostgresOffer({
+      target,
+      billingModel: "payg",
+      generatedAt,
+      sourceUrl: url,
+      currency: payg.currencyCode,
+      hourlyPrice: normalizeHourlyPrice(payg.retailPrice),
+      storagePricePerGbMonth: normalizeMonthlyPrice(storageRow.retailPrice),
+      notes: [
+        "全球区实时 PostgreSQL 零售价格",
+        "按量零售价格",
+        "存储按官方 Flexible Server Storage 单独计费"
+      ]
+    })
+  ];
+
+  if (reservation) {
+    offers.push(
+      buildAzurePostgresOffer({
+        target,
+        billingModel: "reserved",
+        generatedAt,
+        sourceUrl: url,
+        currency: reservation.currencyCode,
+        hourlyPrice: annualReservationToHourly(reservation.retailPrice, target.vcpu),
+        storagePricePerGbMonth: normalizeMonthlyPrice(storageRow.retailPrice),
+        notes: [
+          "全球区实时 PostgreSQL 零售价格",
+          "一年承诺按官方 Reservation vCore 年价折算为小时价",
+          "存储按官方 Flexible Server Storage 单独计费"
+        ]
+      })
+    );
+  }
+
+  return {
+    generatedAt,
+    sourceUrl: url,
+    offers
   };
 }
 
@@ -225,7 +390,84 @@ async function fetchChinaVmRows(target) {
   };
 }
 
+async function fetchChinaPostgresRows(target) {
+  const metadataUrl = "https://prices.azure.cn/api/retail/pricesheet/download?api-version=2023-06-01-preview";
+  const metadata = await fetchJson(metadataUrl);
+  const response = await fetch(metadata.DownloadUrl);
+
+  if (!response.ok) {
+    throw new Error(`Unable to download Azure China price sheet: ${response.status}`);
+  }
+
+  const rows = parseCsv(await response.text());
+  const scopedRows = rows.filter((row) => {
+    return row.serviceName === "Azure Database for PostgreSQL" && row.armRegionName === target.sourceRegion;
+  });
+  const computeRows = scopedRows.filter((row) => row.productName === target.computeProductName);
+  const storageRow = pickStorageRow(scopedRows, target);
+  const payg = computeRows.find((row) => row.armSkuName === target.armSkuName && row.type === "Consumption");
+  const committed = computeRows.find((row) => row.armSkuName === target.armSkuName && row.type === "SavingsPlanConsumption" && isOneYearTerm(row));
+
+  if (!payg || !storageRow) {
+    return {
+      generatedAt: metadata.LastRefreshedAt || new Date().toISOString(),
+      sourceUrl: metadata.DownloadUrl,
+      offers: []
+    };
+  }
+
+  const offers = [
+    buildAzurePostgresOffer({
+      target,
+      billingModel: "payg",
+      generatedAt: metadata.LastRefreshedAt,
+      sourceUrl: metadata.DownloadUrl,
+      currency: payg.currencyCode,
+      hourlyPrice: normalizeHourlyPrice(payg.retailPrice),
+      storagePricePerGbMonth: normalizeMonthlyPrice(storageRow.retailPrice),
+      notes: [
+        "中国区实时 PostgreSQL 零售价格",
+        "按量零售价格",
+        "存储按官方 Flexible Server Storage 单独计费"
+      ]
+    })
+  ];
+
+  if (committed) {
+    offers.push(
+      buildAzurePostgresOffer({
+        target,
+        billingModel: "reserved",
+        generatedAt: metadata.LastRefreshedAt,
+        sourceUrl: metadata.DownloadUrl,
+        currency: committed.currencyCode,
+        hourlyPrice: normalizeHourlyPrice(committed.retailPrice),
+        storagePricePerGbMonth: normalizeMonthlyPrice(storageRow.retailPrice),
+        notes: [
+          "中国区实时 PostgreSQL 零售价格",
+          "一年承诺按官方 1-year savings plan 小时价建模",
+          "存储按官方 Flexible Server Storage 单独计费"
+        ]
+      })
+    );
+  }
+
+  return {
+    generatedAt: metadata.LastRefreshedAt || new Date().toISOString(),
+    sourceUrl: metadata.DownloadUrl,
+    offers
+  };
+}
+
 async function refreshTarget(target) {
+  if (target.workload === "managed-postgres" && target.market === "china") {
+    return fetchChinaPostgresRows(target);
+  }
+
+  if (target.workload === "managed-postgres") {
+    return fetchGlobalPostgresRows(target);
+  }
+
   if (target.market === "china") {
     return fetchChinaVmRows(target);
   }

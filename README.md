@@ -44,6 +44,8 @@ Current live connector scope:
 
 - Azure Global retail pricing for `general-compute`
 - Azure China (21Vianet) retail pricing for `general-compute`
+- Azure Global retail pricing for `managed-postgres`
+- Azure China (21Vianet) retail pricing for `managed-postgres`
 - Other workloads and vendors continue to use the normalized seed dataset until their market adapters are added
 
 ## Azure VM deployment

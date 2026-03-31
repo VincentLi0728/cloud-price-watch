@@ -159,6 +159,10 @@ function buildAssumptions({ market, workload, offers }) {
     assumptions.push("当前部分报价仍来自种子数据，实时市场连接器正在逐步扩展。");
   }
 
+  if (workload === "managed-postgres") {
+    assumptions.push("Azure PostgreSQL live 数据将计算价格与存储价格分开建模，默认不包含额外 IOPS、吞吐和备份超额。");
+  }
+
   return assumptions;
 }
 
