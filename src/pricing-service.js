@@ -106,6 +106,40 @@ function matchesRequirements(offer, requirements) {
   return true;
 }
 
+function normalizeRequirements(workload, requirements) {
+  const normalized = {
+    vcpu: 0,
+    memoryGb: 0,
+    storageGb: 0,
+    requestCount10k: 0,
+    transferGb: 0,
+    gpuCount: 0
+  };
+
+  if (workload === "general-compute" || workload === "managed-postgres") {
+    normalized.vcpu = Number(requirements.vcpu || 0);
+    normalized.memoryGb = Number(requirements.memoryGb || 0);
+    normalized.storageGb = Number(requirements.storageGb || 0);
+    return normalized;
+  }
+
+  if (workload === "object-storage") {
+    normalized.storageGb = Number(requirements.storageGb || 0);
+    normalized.requestCount10k = Number(requirements.requestCount10k || 0);
+    normalized.transferGb = Number(requirements.transferGb || 0);
+    return normalized;
+  }
+
+  if (workload === "gpu-inference") {
+    normalized.vcpu = Number(requirements.vcpu || 0);
+    normalized.memoryGb = Number(requirements.memoryGb || 0);
+    normalized.gpuCount = Number(requirements.gpuCount || 0);
+    return normalized;
+  }
+
+  return normalized;
+}
+
 function buildHighlights(offer, cost, requirements) {
   const highlights = [];
 
@@ -187,7 +221,7 @@ export function compareOffers(input) {
   const market = input.market || "global";
   const region = input.region || getDefaultRegionForMarket(market);
   const billingModel = input.billingModel || "payg";
-  const requirements = input.requirements || {};
+  const requirements = normalizeRequirements(workload, input.requirements || {});
 
   let scopedOffers = offers.filter((offer) => {
     return (
