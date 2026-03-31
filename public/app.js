@@ -9,6 +9,7 @@ const billingSelect = document.querySelector("#billingModel");
 const workloadHint = document.querySelector("#workload-hint");
 const marketHint = document.querySelector("#market-hint");
 const resultSummaryRoot = document.querySelector("#result-summary");
+const submitButton = form.querySelector('button[type="submit"]');
 const fieldGroups = [...document.querySelectorAll("[data-workload-field]")];
 
 let metadataCache = null;
@@ -30,6 +31,11 @@ function createOption(select, item) {
 
 function setStatus(message, tone = "neutral") {
   resultsRoot.innerHTML = `<div class="empty-state ${tone}">${message}</div>`;
+}
+
+function setSubmitState(label, disabled) {
+  submitButton.textContent = label;
+  submitButton.disabled = disabled;
 }
 
 function syncVisibleFields(workload) {
@@ -271,10 +277,11 @@ async function loadMetadata() {
   hydrateFormFromUrl();
 }
 
-async function compare({ replaceHistory = false } = {}) {
+async function compare({ replaceHistory = false, userTriggered = false } = {}) {
   const payload = buildPayload();
   syncUrl(payload, replaceHistory);
   resultSummaryRoot.hidden = true;
+  setSubmitState("比较中 Comparing...", true);
   setStatus("正在计算当前市场下最接近的报价组合...", "neutral");
 
   try {
@@ -293,9 +300,18 @@ async function compare({ replaceHistory = false } = {}) {
     const data = await response.json();
     renderResults(data);
     renderAssumptions(data.assumptions);
+    setSubmitState("重新比较 Compare Again", false);
+
+    if (userTriggered) {
+      resultSummaryRoot.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
   } catch (error) {
     resultSummaryRoot.hidden = true;
     assumptionsRoot.innerHTML = "";
+    setSubmitState("开始比较 Compare", false);
     setStatus(
       error instanceof Error ? `报价比较失败：${error.message}` : "报价比较失败。",
       "error"
@@ -314,7 +330,7 @@ workloadSelect.addEventListener("change", (event) => {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  await compare();
+  await compare({ userTriggered: true });
 });
 
 window.addEventListener("popstate", async () => {
@@ -324,8 +340,10 @@ window.addEventListener("popstate", async () => {
 
 try {
   await loadMetadata();
+  setSubmitState("开始比较 Compare", false);
   await compare({ replaceHistory: true });
 } catch (error) {
+  setSubmitState("开始比较 Compare", false);
   setStatus(
     error instanceof Error ? `无法加载元数据：${error.message}` : "无法加载元数据。",
     "error"
